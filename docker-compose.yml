@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: witask
+      POSTGRES_PASSWORD: witask
+      POSTGRES_DB: witask
+    volumes:
+      - witask_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U witask -d witask"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  witask_pg_data:

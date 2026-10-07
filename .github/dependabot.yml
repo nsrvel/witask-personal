@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      next-eslint:
+        patterns:
+          - next
+          - eslint*
+          - "@eslint/*"
+          - eslint-config-next

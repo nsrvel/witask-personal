@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="id" class="">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Harian. — Personal Task Manager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F5F1; --surface:#FFFFFF; --subtle:#EFEDE7; --line:#E5E3DA;
+    --ink:#1B1B18; --muted:#74736A; --accent:#E8590C;
+  }
+  .dark{
+    --paper:#131311; --surface:#1B1A17; --subtle:#242320; --line:#2D2C27;
+    --ink:#ECEBE4; --muted:#98978D; --accent:#F97038;
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  body{ font-family:'Inter',system-ui,sans-serif; }
+  .no-scrollbar::-webkit-scrollbar{ display:none; }
+  .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
+  .card-in{ animation:cardIn .25s ease both; }
+  @keyframes sheetIn{ from{ transform:translateX(100%);} to{ transform:none;} }
+  textarea:focus, input:focus, select:focus, button:focus-visible{ outline:none; }
+  .field:focus{ box-shadow:0 0 0 2px color-mix(in srgb, var(--ink) 20%, transparent); }
+  .tabular{ font-variant-numeric: tabular-nums; }
+  ::selection{ background:var(--accent); color:#fff; }
+</style>
+</head>
+<body class="bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen transition-colors">
+
+<div class="max-w-3xl mx-auto px-4 sm:px-6 pb-20">
+
+  <!-- ===== HEADER ===== -->
+  <header class="flex items-center justify-between gap-3 py-5">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[var(--ink)] text-[var(--paper)] grid place-items-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <div>
+        <h1 class="font-extrabold tracking-tight leading-none text-lg">Harian<span class="text-[var(--accent)]">.</span></h1>
+        <p class="text-[11px] text-[var(--muted)] mt-0.5" id="todayLabel">—</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="relative hidden sm:block">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="searchInput" type="text" placeholder="Cari task…"
+          class="field w-44 rounded-lg border border-[var(--line)] bg-[var(--surface)] pl-8 pr-3 py-1.5 text-xs placeholder:text-[var(--muted)] transition" />
+      </div>
+      <button id="darkToggle" class="w-9 h-9 grid place-items-center rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)] transition" title="Ganti tema">
+        <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg id="iconMoon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="relative sm:hidden mb-3">
+    <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="searchInputM" type="text" placeholder="Cari task…"
+      class="field w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] pl-8 pr-3 py-2 text-sm placeholder:text-[var(--muted)] transition" />
+  </div>
+
+  <!-- ===== STATISTIK ===== -->
+  <section class="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted)]">Statistik</p>
+      <div class="inline-flex rounded-lg bg-[var(--subtle)] p-1 text-xs font-medium" id="statTabs">
+        <button data-period="harian"   class="tab px-3 py-1.5 rounded-md transition">Harian</button>
+        <button data-period="mingguan" class="tab px-3 py-1.5 rounded-md transition">Mingguan</button>
+        <button data-period="bulanan"  class="tab px-3 py-1.5 rounded-md transition">Bulanan</button>
+        <button data-period="tahunan"  class="tab px-3 py-1.5 rounded-md transition">Tahunan</button>
+        <button data-period="kustom"   class="tab px-3 py-1.5 rounded-md transition">Kustom</button>
+      </div>
+    </div>
+
+    <!-- custom range -->
+    <div id="customRange" class="hidden mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <input type="date" id="crFrom" class="field rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-xs" />
+      <span class="text-[var(--muted)]">sampai</span>
+      <input type="date" id="crTo" class="field rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-xs" />
+      <button id="crApply" class="rounded-lg bg-[var(--ink)] text-[var(--paper)] px-3 py-1.5 text-xs font-semibold">Terapkan</button>
+      <span id="crLabel" class="text-[var(--muted)]"></span>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5">
+      <div>
+        <p class="text-[11px] text-[var(--muted)]">Task selesai</p>
+        <p class="mt-1 text-2xl font-bold tabular tracking-tight"><span id="mDone">0</span><span class="text-[var(--muted)] font-medium text-base">/<span id="mTotal">0</span></span></p>
+        <div class="mt-2 h-1.5 rounded-full bg-[var(--subtle)] overflow-hidden">
+          <div id="mBar" class="h-full rounded-full bg-[var(--accent)] transition-all duration-500" style="width:0%"></div>
+        </div>
+      </div>
+      <div>
+        <p class="text-[11px] text-[var(--muted)]">Streak</p>
+        <p class="mt-1 text-2xl font-bold tabular tracking-tight inline-flex items-center gap-1.5"><span id="mStreak">0</span> hari
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8590C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        </p>
+        <p class="mt-2 text-[11px] text-[var(--muted)]">tanpa hari kosong</p>
+      </div>
+      <div>
+        <p class="text-[11px] text-[var(--muted)]">Waktu fokus</p>
+        <p class="mt-1 text-2xl font-bold tabular tracking-tight" id="mFocus">0m</p>
+        <p class="mt-2 text-[11px] text-[var(--muted)]">dari estimasi <span id="mEst">0m</span></p>
+      </div>
+      <div>
+        <p class="text-[11px] text-[var(--muted)]">Overdue</p>
+        <p class="mt-1 text-2xl font-bold tabular tracking-tight" id="mOverdue">0</p>
+        <p class="mt-2 text-[11px] text-[var(--muted)]">task menunggu</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RAIL TANGGAL ===== -->
+  <section class="mt-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-2.5">
+    <div class="flex items-center gap-1.5">
+      <button id="railPrev" class="w-8 h-8 flex-none grid place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--subtle)] hover:text-[var(--ink)] transition">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div id="rail" class="flex gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5"></div>
+      <button id="railNext" class="w-8 h-8 flex-none grid place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--subtle)] hover:text-[var(--ink)] transition">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button id="railToday" class="flex-none text-xs font-semibold border border-[var(--line)] rounded-lg px-3 py-2 hover:bg-[var(--subtle)] transition">Hari ini</button>
+    </div>
+  </section>
+
+  <!-- ===== FILTER GROUP + PRIORITAS ===== -->
+  <div class="mt-5 flex flex-wrap items-center gap-2">
+    <div id="groupPills" class="flex flex-wrap gap-1.5"></div>
+    <div class="ml-auto flex gap-2">
+      <select id="filterPriority" class="field rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] cursor-pointer">
+        <option value="all">Semua prioritas</option>
+        <option value="urgent">Mendesak</option>
+        <option value="high">Tinggi</option>
+        <option value="medium">Sedang</option>
+        <option value="low">Rendah</option>
+      </select>
+      <select id="filterStatus" class="field rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] cursor-pointer">
+        <option value="all">Semua status</option>
+        <option value="active">Aktif</option>
+        <option value="done">Selesai</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ===== QUICK ADD ===== -->
+  <div class="mt-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2 flex items-center gap-2">
+    <span class="pl-1.5 text-[var(--muted)] flex-none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+    <input id="qaInput" type="text" placeholder="Tulis task baru… tekan Enter"
+      class="flex-1 min-w-0 bg-transparent text-sm placeholder:text-[var(--muted)] py-1.5" />
+    <select id="qaPriority" class="field hidden sm:block flex-none rounded-lg border border-[var(--line)] bg-[var(--subtle)] px-2 py-1.5 text-[11px] font-medium cursor-pointer">
+      <option value="medium">Sedang</option><option value="urgent">Mendesak</option>
+      <option value="high">Tinggi</option><option value="low">Rendah</option>
+    </select>
+    <select id="qaGroup" class="field hidden sm:block flex-none rounded-lg border border-[var(--line)] bg-[var(--subtle)] px-2 py-1.5 text-[11px] font-medium cursor-pointer"></select>
+    <button id="qaAdd" class="flex-none rounded-lg bg-[var(--ink)] text-[var(--paper)] text-xs font-semibold px-3.5 py-2 hover:opacity-85 transition">Tambah</button>
+  </div>
+
+  <!-- ===== OVERDUE ===== -->
+  <section id="overdueWrap" class="mt-5 hidden">
+    <button id="overdueToggle" class="flex items-center gap-2 text-sm font-semibold text-[#D93025] dark:text-[#F87171]">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4M12 17h.01"/></svg>
+      Terlambat <span id="overdueCount" class="text-xs font-bold bg-[#D93025] text-white rounded-md px-1.5 py-0.5">0</span>
+      <svg id="overdueChev" class="transition-transform" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div id="overdueList" class="mt-2 space-y-2"></div>
+  </section>
+
+  <!-- ===== LIST TASK HARI INI ===== -->
+  <section class="mt-6">
+    <div class="flex items-baseline justify-between">
+      <h2 class="text-sm font-bold tracking-tight" id="listTitle">Hari ini</h2>
+      <span class="text-[11px] text-[var(--muted)]" id="listCount"></span>
+    </div>
+    <div id="taskList" class="mt-2.5 space-y-2"></div>
+    <div id="emptyState" class="hidden mt-2 rounded-xl border border-dashed border-[var(--line)] bg-[var(--surface)]/50 py-12 text-center">
+      <div class="mx-auto w-10 h-10 rounded-full bg-[var(--subtle)] grid place-items-center text-[var(--muted)]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <p class="mt-3 text-sm font-medium">Tidak ada task di tanggal ini</p>
+      <p class="text-xs text-[var(--muted)] mt-1">Santai dulu, atau tambah task lewat quick add di atas.</p>
+    </div>
+  </section>
+
+  <!-- ===== JURNAL HARIAN ===== -->
+  <section class="mt-10">
+    <div class="flex items-center gap-2">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--muted)]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      <h2 class="text-sm font-bold tracking-tight">Catatan hari ini</h2>
+    </div>
+    <textarea id="journal" rows="4" placeholder="Apa yang kamu kerjakan hari ini? Highlight, hambatan, ide besok…"
+      class="field mt-2.5 w-full resize-y rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 text-sm leading-relaxed placeholder:text-[var(--muted)] transition"></textarea>
+    <p class="mt-1.5 text-[11px] text-[var(--muted)]">Tersimpan otomatis di perangkat ini.</p>
+  </section>
+
+  <footer class="mt-14 pt-6 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-[var(--muted)]">
+    <span>Harian. — mock data, UI only</span>
+    <span id="footDate"></span>
+  </footer>
+</div>
+
+<!-- ===== SHEET DETAIL ===== -->
+<div id="backdrop" class="fixed inset-0 bg-black/45 opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
+<aside id="sheet" class="fixed top-0 right-0 h-full w-full max-w-md bg-[var(--paper)] border-l border-[var(--line)] z-50 translate-x-full transition-transform duration-300 flex flex-col">
+  <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--line)]">
+    <p class="text-xs font-semibold uppercase tracking-widest text-[var(--muted)]">Detail Task</p>
+    <button id="sheetClose" class="w-8 h-8 grid place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--subtle)] hover:text-[var(--ink)] transition">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="sheetBody" class="flex-1 overflow-y-auto px-5 py-5 space-y-6"></div>
+</aside>
+
+<script>
+/* ================= ICONS ================= */
+const I = {
+  check : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  flag  : '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  repeat: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>',
+  clock : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  play  : '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4.5v15l13-7.5z"/></svg>',
+  pause : '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg>',
+  cal   : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  chevD : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  layers: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>',
+  trash : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+};
+
+/* ================= DATA (MOCK) ================= */
+const groups = [
+  { id:'kerja',    label:'Kerja',    color:'#3B82F6' },
+  { id:'personal', label:'Personal', color:'#D63384' },
+  { id:'health',   label:'Health',   color:'#18A058' },
+  { id:'rumah',    label:'Rumah',    color:'#D97706' },
+];
+const priorities = {
+  urgent : { label:'Mendesak', color:'#E5484D' },
+  high   : { label:'Tinggi',   color:'#F76B15' },
+  medium : { label:'Sedang',   color:'#B58900' },
+  low    : { label:'Rendah',   color:'#64748B' },
+};
+
+const today = new Date(); today.setHours(0,0,0,0);
+function dOff(n){ const d = new Date(today); d.setDate(d.getDate()+n); return d; }
+
+let tasks = [
+  { id:1, title:'Design review halaman checkout', desc:'Cek ulang flow pembayaran + empty state bareng tim product.', group:'kerja', priority:'urgent', done:false, est:120, tracked:75, due:dOff(0), recurring:null, tags:['design','q4'],
+    subs:[{t:'Kumpulkan feedback tim',d:true},{t:'Update mockup high-fidelity',d:false},{t:'Handoff ke developer',d:false}] },
+  { id:2, title:'Standup meeting harian', desc:'Sync progress & blocker dengan tim.', group:'kerja', priority:'medium', done:true, est:15, tracked:15, due:dOff(0), recurring:'Harian', tags:['meeting'], subs:[] },
+  { id:3, title:'Proposal klien Barataya', desc:'Draft scope, timeline, dan estimasi biaya.', group:'kerja', priority:'high', done:false, est:180, tracked:40, due:dOff(0), recurring:null, tags:['klien'],
+    subs:[{t:'Outline proposal',d:true},{t:'Isi scope pekerjaan',d:false},{t:'Review pricing',d:false},{t:'Kirim ke klien',d:false}] },
+  { id:4, title:'Workout — push day', desc:'Chest, shoulders, triceps. 45 menit.', group:'health', priority:'medium', done:false, est:60, tracked:0, due:dOff(0), recurring:'Harian', tags:['gym'], subs:[] },
+  { id:5, title:'Belanja groceries mingguan', desc:'Sayur, protein, snacks buat stok 1 minggu.', group:'rumah', priority:'low', done:false, est:45, tracked:0, due:dOff(0), recurring:'Mingguan', tags:['belanja'], subs:[] },
+  { id:6, title:'Baca 20 halaman buku', desc:'Currently reading: Deep Work — Cal Newport.', group:'personal', priority:'low', done:true, est:30, tracked:35, due:dOff(0), recurring:null, tags:['baca'], subs:[] },
+  { id:7, title:'Reply email klien Nusantara', desc:'Follow-up invoice bulan lalu yang belum dibayar.', group:'kerja', priority:'high', done:false, est:30, tracked:0, due:dOff(-1), recurring:null, tags:['email','finance'], subs:[] },
+  { id:8, title:'Bayar tagihan listrik & internet', desc:'Cek auto-debit di rekening.', group:'rumah', priority:'high', done:false, est:10, tracked:0, due:dOff(-2), recurring:'Bulanan', tags:['finance'], subs:[] },
+  { id:9, title:'Meditasi pagi', desc:'10 menit, before screen time.', group:'health', priority:'low', done:true, est:10, tracked:10, due:dOff(0), recurring:'Harian', tags:[], subs:[] },
+  { id:10, title:'Rencana konten minggu depan', desc:'Brainstorm 5 ide post + jadwal upload.', group:'personal', priority:'medium', done:false, est:90, tracked:0, due:dOff(2), recurring:'Mingguan', tags:['konten'], subs:[{t:'Riset tren',d:false},{t:'Tulis outline',d:false}] },
+];
+let nextId = 11;
+
+/* ================= STATE ================= */
+const state = {
+  group:'all', q:'', priority:'all', status:'all',
+  selectedDate: new Date(today), period:'harian',
+};
+const expanded = new Set();
+let trackingId = null;
+let railOffset = -7;
+const RAIL_SPAN = 15;
+
+/* ================= HELPERS ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sameDay = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+const fmtMin = m => m>=60 ? (Math.floor(m/60)+'j'+(m%60?(' '+m%60+'m'):'')) : m+'m';
+const fmtDate = d => d.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+const WD = ['MIN','SEN','SEL','RAB','KAM','JUM','SAB'];
+
+/* ================= HEADER LABEL ================= */
+function renderHeader(){
+  const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+  $('#todayLabel').textContent = new Date().toLocaleDateString('id-ID', opts);
+  $('#footDate').textContent = new Date().toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+}
+
+/* ================= RAIL ================= */
+function railDotHTML(filled, selected){
+  let h = '';
+  for(let i=0;i<3;i++){
+    const on = i < filled;
+    const cls = selected
+      ? (on ? 'bg-[var(--paper)]' : 'bg-[var(--paper)]/30')
+      : (on ? 'bg-[var(--accent)]' : 'bg-[var(--line)]');
+    h += '<i class="w-1 h-1 rounded-full '+cls+'"></i>';
+  }
+  return '<span class="flex gap-0.5 mt-1">'+h+'</span>';
+}
+
+function renderRail(){
+  const rail = $('#rail');
+  rail.innerHTML = '';
+  for(let i=0;i<RAIL_SPAN;i++){
+    const off = railOffset + i;
+    const d = dOff(off);
+    const isToday = off===0;
+    const sel = sameDay(d, state.selectedDate);
+
+    let pct = 0;
+    if(isToday){
+      const t = tasks.filter(t => sameDay(t.due, d));
+      pct = t.length ? t.filter(t=>t.done).length / t.length : 0;
+    } else {
+      pct = 0.15 + ((Math.abs(off*2654435761) % 80)/100);
+    }
+    const filled = Math.round(pct*3);
+
+    const btn = document.createElement('button');
+    btn.className = 'rail-day flex-none flex flex-col items-center min-w-[46px] py-2 rounded-xl border transition '
+      + (sel
+        ? 'bg-[var(--ink)] text-[var(--paper)] border-transparent'
+        : 'border-transparent text-[var(--ink)] hover:bg-[var(--subtle)] ' + (isToday ? 'ring-1 ring-[var(--line)]' : ''));
+    btn.innerHTML =
+      '<span class="text-[9px] font-bold uppercase tracking-wider '+(sel?'opacity-70':'text-[var(--muted)]')+'">'+WD[d.getDay()]+'</span>'
+      + '<span class="text-sm font-bold tabular mt-0.5">'+d.getDate()+'</span>'
+      + railDotHTML(filled, sel);
+    btn.addEventListener('click', () => {
+      state.selectedDate = new Date(d);
+      renderAll();
+    });
+    rail.appendChild(btn);
+  }
+}
+
+/* ================= GROUP PILLS ================= */
+function renderGroupPills(){
+  const wrap = $('#groupPills');
+  const pill = (id, label, color) => {
+    const active = state.group === id;
+    return '<button data-group="'+id+'" class="gpill inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition '
+      + (active
+        ? 'bg-[var(--ink)] text-[var(--paper)] border-transparent'
+        : 'border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--muted)]')
+      + '"><i class="w-1.5 h-1.5 rounded-full" style="background:'+color+'"></i>'+label+'</button>';
+  };
+  wrap.innerHTML = pill('all','Semua','#888780')
+    + groups.map(g => pill(g.id, g.label, g.color)).join('');
+  wrap.querySelectorAll('.gpill').forEach(b => b.addEventListener('click', () => {
+    state.group = b.dataset.group; renderGroupPills(); renderTasks();
+  }));
+}
+
+/* ================= TASK CARD ================= */
+function cardHTML(t, overdue){
+  const g = groups.find(g => g.id === t.group);
+  const pr = priorities[t.priority];
+  const subsDone = t.subs.filter(s => s.done).length;
+  const isTracking = trackingId === t.id;
+  const open = expanded.has(t.id);
+
+  return '<article data-id="'+t.id+'" class="card-in rounded-xl border bg-[var(--surface)] transition '
+    + (overdue ? 'border-l-[3px] border-l-[#D93025] dark:border-l-[#F87171] ' : '')
+    + (t.done ? 'opacity-70 border-[var(--line)]' : 'border-[var(--line)] hover:border-[var(--muted)]')
+    + '">'
+    + '<div class="flex items-start gap-3 p-3 sm:p-3.5">'
+    +   '<button data-act="toggle" title="Tandai selesai" class="mt-0.5 w-[18px] h-[18px] flex-none rounded-[5px] border-2 grid place-items-center transition '
+    +     (t.done ? 'bg-[var(--ink)] border-[var(--ink)] text-[var(--paper)]' : 'border-[var(--line)] hover:border-[var(--muted)] text-transparent')
+    +   '">'+I.check+'</button>'
+    +   '<button data-act="open" class="flex-1 min-w-0 text-left">'
+    +     '<div class="flex items-center gap-1.5 flex-wrap">'
+    +       '<span class="text-sm font-semibold leading-snug '+(t.done?'line-through text-[var(--muted)] font-normal':'')+'">'+esc(t.title)+'</span>'
+    +       (t.recurring ? '<span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-[var(--muted)] border border-[var(--line)] rounded-md px-1.5 py-0.5">'+I.repeat+t.recurring+'</span>' : '')
+    +     '</div>'
+    +     (t.desc ? '<p class="mt-0.5 text-xs text-[var(--muted)] truncate">'+esc(t.desc)+'</p>' : '')
+    +     '<div class="mt-2 flex items-center gap-x-3 gap-y-1.5 flex-wrap text-[11px] text-[var(--muted)]">'
+    +       '<span class="inline-flex items-center gap-1 font-bold" style="color:'+pr.color+'">'+I.flag+pr.label+'</span>'
+    +       '<span class="inline-flex items-center gap-1.5"><i class="w-1.5 h-1.5 rounded-full" style="background:'+g.color+'"></i>'+g.label+'</span>'
+    +       t.tags.map(tag => '<span class="rounded-md bg-[var(--subtle)] px-1.5 py-0.5">#'+esc(tag)+'</span>').join('')
+    +       (t.subs.length ? '<span class="inline-flex items-center gap-1">'+I.layers+subsDone+'/'+t.subs.length+' subtask</span>' : '')
+    +       '<span class="inline-flex items-center gap-1">'+I.clock+fmtMin(t.est)+'</span>'
+    +       (t.tracked ? '<span class="inline-flex items-center gap-1 font-semibold '+(isTracking?'text-[var(--accent)]':'')+'">'+(isTracking?I.pause:I.play)+fmtMin(t.tracked)+'</span>' : '')
+    +       '<span class="inline-flex items-center gap-1 '+(overdue?'text-[#D93025] dark:text-[#F87171] font-bold':'')+'">'+I.cal+(overdue?'lewat ':'')+fmtDate(t.due)+'</span>'
+    +     '</div>'
+    +   '</button>'
+    +   '<div class="flex items-center gap-0.5 flex-none">'
+    +     '<button data-act="timer" title="Timer fokus" class="w-7 h-7 grid place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--subtle)] hover:text-[var(--ink)] '+(isTracking?'!text-[var(--accent)] animate-pulse':'')+'">'+(isTracking?I.pause:I.play)+'</button>'
+    +     '<button data-act="expand" title="Subtask" class="w-7 h-7 grid place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--subtle)] hover:text-[var(--ink)] '+(open?'rotate-180':'')+'">'+I.chevD+'</button>'
+    +   '</div>'
+    + '</div>'
+    + (open ? subPanelHTML(t) : '')
+    + '</article>';
+}
+
+function subPanelHTML(t){
+  if(!t.subs.length){
+    return '<div class="px-3.5 pb-3.5 -mt-1"><button data-act="open" class="text-[11px] font-semibold text-[var(--muted)] hover:text-[var(--ink)] underline underline-offset-2">Buka detail lengkap →</button></div>';
+  }
+  const rows = t.subs.map((s,i) =>
+    '<div class="flex items-center gap-2.5">'
+    + '<button data-act="subtoggle" data-idx="'+i+'" class="w-3.5 h-3.5 flex-none rounded-[4px] border-2 grid place-items-center transition '
+    + (s.d ? 'bg-[var(--ink)] border-[var(--ink)] text-[var(--paper)]' : 'border-[var(--line)] text-transparent hover:border-[var(--muted)]')
+    + '">'+I.check+'</button>'
+    + '<span class="text-xs '+(s.d?'line-through text-[var(--muted)]':'')+'">'+esc(s.t)+'</span>'
+    + '</div>'
+  ).join('');
+  return '<div class="mx-3 mb-3 rounded-lg bg-[var(--subtle)]/60 p-3 space-y-2">'
+    + rows
+    + '<button data-act="open" class="pt-1 text-[11px] font-semibold text-[var(--muted)] hover:text-[var(--ink)] underline underline-offset-2">Buka detail lengkap →</button>'
+    + '</div>';
+}
+
+/* ================= LIST RENDER ================= */
+function matchesFilter(t){
+  if(state.group !== 'all' && t.group !== state.group) return false;
+  if(state.priority !== 'all' && t.priority !== state.priority) return false;
+  if(state.status === 'active' && t.done) return false;
+  if(state.status === 'done' && !t.done) return false;
+  if(state.q){
+    const q = state.q.toLowerCase();
+    const hay = (t.title+' '+t.desc+' '+t.tags.join(' ')).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+let overdueOpen = true;
+
+function renderTasks(){
+  const sel = state.selectedDate;
+  const list = tasks.filter(matchesFilter);
+
+  const overdue = list.filter(t => !t.done && t.due < sel).sort((a,b) => a.due - b.due);
+  const todays  = list.filter(t => sameDay(t.due, sel))
+    .sort((a,b) => (a.done - b.done) || ({urgent:0,high:1,medium:2,low:3}[a.priority] - {urgent:0,high:1,medium:2,low:3}[b.priority]));
+
+  // overdue section
+  const ow = $('#overdueWrap');
+  if(overdue.length && overdueOpen !== undefined){
+    ow.classList.remove('hidden');
+    $('#overdueCount').textContent = overdue.length;
+    $('#overdueList').innerHTML = overdue.map(t => cardHTML(t, true)).join('');
+    $('#overdueList').classList.toggle('hidden', !overdueOpen);
+    $('#overdueChev').style.transform = overdueOpen ? '' : 'rotate(-90deg)';
+  } else {
+    ow.classList.add('hidden');
+  }
+
+  // today's list
+  const title = sameDay(sel, today) ? 'Hari ini'
+    : sel > today ? 'Akan datang' : sel.toLocaleDateString('id-ID',{weekday:'long', day:'numeric', month:'long'});
+  $('#listTitle').textContent = title;
+
+  const visible = [...todays];
+  $('#taskList').innerHTML = visible.map(t => cardHTML(t, false)).join('');
+  const doneN = todays.filter(t => t.done).length;
+  $('#listCount').textContent = todays.length ? doneN+'/'+todays.length+' selesai' : '';
+  $('#emptyState').classList.toggle('hidden', todays.length > 0 || overdue.length > 0);
+
+  renderRail();
+  renderStats();
+}
+
+/* ================= STATS ================= */
+const periodMock = {
+  mingguan : { done:23, total:34, focus:1020, est:1890, streak:6, overdue:2 },
+  bulanan  : { done:96, total:140, focus:4120, est:7200, streak:6, overdue:5 },
+  tahunan  : { done:812, total:1240, focus:38160, est:54000, streak:6, overdue:12 },
+};
+
+function renderStats(){
+  let s;
+  if(state.period === 'harian'){
+    const todays = tasks.filter(t => sameDay(t.due, today));
+    s = {
+      done: todays.filter(t => t.done).length,
+      total: todays.length,
+      focus: todays.reduce((a,t) => a + t.tracked, 0),
+      est: todays.reduce((a,t) => a + t.est, 0),
+      streak: 6,
+      overdue: tasks.filter(t => !t.done && t.due < today).length,
+    };
+  } else if(state.period === 'kustom'){
+    s = $('#crLabel').dataset.applied
+      ? JSON.parse($('#crLabel').dataset.stats)
+      : { done:'—', total:'—', focus:'—', est:'—', streak:6, overdue:'—' };
+  } else {
+    s = periodMock[state.period];
+  }
+  $('#mDone').textContent = s.done;
+  $('#mTotal').textContent = s.total;
+  $('#mBar').style.width = (typeof s.done==='number' && s.total ? Math.round(s.done/s.total*100) : 0) + '%';
+  $('#mStreak').textContent = s.streak;
+  $('#mFocus').textContent = typeof s.focus==='number' ? fmtMin(s.focus) : s.focus;
+  $('#mEst').textContent = typeof s.est==='number' ? fmtMin(s.est) : s.est;
+  $('#mOverdue').textContent = s.overdue;
+
+  // tab aktif
+  document.querySelectorAll('#statTabs .tab').forEach(b => {
+    const on = b.dataset.period === state.period;
+    b.className = 'tab px-3 py-1.5 rounded-md transition '
+      + (on ? 'bg-[var(--surface)] text-[var(--ink)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--ink)]');
+  });
+  $('#customRange').classList.toggle('hidden', state.period !== 'kustom');
+  $('#customRange').classList.toggle('flex', state.period === 'kustom');
+}
+
+/* ================= SHEET DETAIL ================= */
+function openSheet(id){
+  const t = tasks.find(x => x.id === id);
+  if(!t) return;
+  const g = groups.find(g => g.id === t.group);
+  const pr = priorities[t.priority];
+
+  $('#sheetBody').innerHTML = ''
+    + '<div>'
+    +   '<div class="flex items-center gap-1.5 flex-wrap">'
+    +     '<span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-md" style="color:'+pr.color+';background:color-mix(in srgb,'+pr.color+' 12%, transparent)">'+I.flag+pr.label+'</span>'
+    +     '<span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--muted)]"><i class="w-1.5 h-1.5 rounded-full" style="background:'+g.color+'"></i>'+g.label+'</span>'
+    +     (t.recurring ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[var(--muted)] border border-[var(--line)] rounded-md px-1.5 py-0.5">'+I.repeat+t.recurring+'</span>' : '')
+    +   '</div>'
+    +   '<h3 class="mt-2.5 text-lg font-bold tracking-tight leading-snug">'+esc(t.title)+'</h3>'
+    +   '<p class="mt-1.5 text-sm text-[var(--muted)] leading-relaxed">'+esc(t.desc||'Tidak ada deskripsi.')+'</p>'
+    +   '<div class="mt-3 flex flex-wrap gap-1.5">'
+    +     t.tags.map(tag => '<span class="rounded-md bg-[var(--subtle)] px-2 py-1 text-[11px] font-medium text-[var(--muted)]">#'+esc(tag)+'</span>').join('')
+    +     '<button class="rounded-md border border-dashed border-[var(--line)] px-2 py-1 text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)]">+ tag</button>'
+    +   '</div>'
+    + '</div>'
+
+    + '<div class="grid grid-cols-3 gap-2 text-center">'
+    +   '<div class="rounded-xl bg-[var(--subtle)]/60 p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)]">Due</p><p class="mt-1 text-sm font-bold">'+fmtDate(t.due)+'</p></div>'
+    +   '<div class="rounded-xl bg-[var(--subtle)]/60 p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)]">Estimasi</p><p class="mt-1 text-sm font-bold">'+fmtMin(t.est)+'</p></div>'
+    +   '<div class="rounded-xl bg-[var(--subtle)]/60 p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)]">Terpakai</p><p class="mt-1 text-sm font-bold '+(trackingId===t.id?'text-[var(--accent)]':'')+'">'+fmtMin(t.tracked)+'</p></div>'
+    + '</div>'
+
+    + '<div>'
+    +   '<div class="flex items-center justify-between"><p class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Subtask</p><span class="text-[11px] text-[var(--muted)]">'+t.subs.filter(s=>s.done).length+'/'+t.subs.length+'</span></div>'
+    +   (t.subs.length
+        ? '<div class="mt-2.5 space-y-2.5">'+ t.subs.map((s,i) =>
+            '<div class="flex items-center gap-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5">'
+            + '<button data-sheetact="subtoggle" data-idx="'+i+'" class="w-4 h-4 flex-none rounded-[5px] border-2 grid place-items-center transition '
+            + (s.d ? 'bg-[var(--ink)] border-[var(--ink)] text-[var(--paper)]' : 'border-[var(--line)] text-transparent hover:border-[var(--muted)]')+'">'+I.check+'</button>'
+            + '<span class="text-sm '+(s.d?'line-through text-[var(--muted)]':'')+'">'+esc(s.t)+'</span>'
+            + '</div>').join('') + '</div>'
+        : '<p class="mt-2.5 text-xs text-[var(--muted)]">Belum ada subtask.</p>')
+    +   '<button data-sheetact="addsub" class="mt-2.5 w-full rounded-lg border border-dashed border-[var(--line)] py-2.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--muted)] transition">+ Tambah subtask</button>'
+    + '</div>'
+
+    + '<div>'
+    +   '<p class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Aktivitas</p>'
+    +   '<div class="mt-2.5 space-y-3 text-xs text-[var(--muted)]">'
+    +     '<div class="flex gap-2.5"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-[var(--accent)] flex-none"></span><p><b class="text-[var(--ink)] font-semibold">Kamu</b> membuat task ini · '+fmtDate(dOff(-1))+'</p></div>'
+    +     '<div class="flex gap-2.5"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-[var(--line)] flex-none"></span><p><b class="text-[var(--ink)] font-semibold">Kamu</b> menambahkan '+t.subs.length+' subtask · '+fmtDate(dOff(-1))+'</p></div>'
+    +     (t.tracked ? '<div class="flex gap-2.5"><span class="mt-1 w-1.5 h-1.5 rounded-full bg-[var(--line)] flex-none"></span><p><b class="text-[var(--ink)] font-semibold">Timer</b> tercatat '+fmtMin(t.tracked)+' fokus · hari ini</p></div>' : '')
+    +   '</div>'
+    + '</div>'
+
+    + '<div class="flex gap-2 pt-1">'
+    +   '<button data-sheetact="toggle" class="flex-1 rounded-lg bg-[var(--ink)] text-[var(--paper)] py-2.5 text-sm font-semibold hover:opacity-85 transition">'+(t.done?'Tandai belum selesai':'Tandai selesai')+'</button>'
+    +   '<button data-sheetact="delete" class="w-11 grid place-items-center rounded-lg border border-[var(--line)] text-[#D93025] hover:bg-[#D93025]/10 transition">'+I.trash+'</button>'
+    + '</div>';
+
+  const bd = $('#backdrop'), sh = $('#sheet');
+  bd.classList.remove('pointer-events-none'); bd.classList.add('opacity-100');
+  sh.classList.remove('translate-x-full');
+}
+
+function closeSheet(){
+  $('#backdrop').classList.add('pointer-events-none'); $('#backdrop').classList.remove('opacity-100');
+  $('#sheet').classList.add('translate-x-full');
+}
+let sheetTaskId = null;
+
+/* ================= EVENTS ================= */
+document.addEventListener('click', e => {
+  const actBtn = e.target.closest('[data-act]');
+  if(actBtn){
+    const card = actBtn.closest('[data-id]');
+    const id = +card.dataset.id;
+    const t = tasks.find(x => x.id === id);
+    const act = actBtn.dataset.act;
+
+    if(act === 'toggle'){ t.done = !t.done; if(t.done) expanded.delete(id); renderTasks(); }
+    if(act === 'timer'){ trackingId = trackingId === id ? null : id; renderTasks(); if(sheetTaskId === id) openSheet(id); }
+    if(act === 'expand'){ expanded.has(id) ? expanded.delete(id) : expanded.add(id); renderTasks(); }
+    if(act === 'open'){ sheetTaskId = id; openSheet(id); }
+    if(act === 'subtoggle'){
+      const s = t.subs[+actBtn.dataset.idx];
+      if(s){ s.d = !s.d; renderTasks(); }
+    }
+  }
+
+  const sheetBtn = e.target.closest('[data-sheetact]');
+  if(sheetBtn && sheetTaskId){
+    const t = tasks.find(x => x.id === sheetTaskId);
+    const a = sheetBtn.dataset.sheetact;
+    if(a === 'toggle'){ t.done = !t.done; renderTasks(); openSheet(t.id); }
+    if(a === 'subtoggle'){ const s = t.subs[+sheetBtn.dataset.idx]; if(s){ s.d = !s.d; renderTasks(); openSheet(t.id); } }
+    if(a === 'addsub'){ t.subs.push({t:'Subtask baru '+(t.subs.length+1), d:false}); renderTasks(); openSheet(t.id); }
+    if(a === 'delete'){ tasks = tasks.filter(x => x.id !== t.id); closeSheet(); sheetTaskId = null; renderTasks(); }
+  }
+});
+
+$('#sheetClose').addEventListener('click', () => { closeSheet(); sheetTaskId = null; });
+$('#backdrop').addEventListener('click', () => { closeSheet(); sheetTaskId = null; });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeSheet(); sheetTaskId = null; } });
+
+// rail nav
+$('#railPrev').addEventListener('click', () => { railOffset -= 7; renderRail(); });
+$('#railNext').addEventListener('click', () => { railOffset += 7; renderRail(); });
+$('#railToday').addEventListener('click', () => { state.selectedDate = new Date(today); railOffset = -7; renderAll(); });
+
+// overdue collapse
+$('#overdueToggle').addEventListener('click', () => { overdueOpen = !overdueOpen; renderTasks(); });
+
+// filters
+$('#filterPriority').addEventListener('change', e => { state.priority = e.target.value; renderTasks(); });
+$('#filterStatus').addEventListener('change', e => { state.status = e.target.value; renderTasks(); });
+$('#searchInput').addEventListener('input', e => { state.q = e.target.value; renderTasks(); });
+$('#searchInputM').addEventListener('input', e => { state.q = e.target.value; renderTasks(); });
+
+// stat tabs
+document.querySelectorAll('#statTabs .tab').forEach(b => b.addEventListener('click', () => {
+  state.period = b.dataset.period; renderStats();
+}));
+
+// custom range
+(function(){
+  const f = new Date(today); f.setDate(f.getDate()-6);
+  $('#crFrom').value = f.toISOString().slice(0,10);
+  $('#crTo').value = today.toISOString().slice(0,10);
+})();
+$('#crApply').addEventListener('click', () => {
+  const a = new Date($('#crFrom').value), b = new Date($('#crTo').value);
+  if(isNaN(a) || isNaN(b)) return;
+  const days = Math.max(1, Math.round((b-a)/86400000)+1);
+  const stats = { done: days*5, total: days*8, focus: days*214, est: days*340, streak:6, overdue:1 };
+  const lbl = $('#crLabel');
+  lbl.dataset.applied = '1'; lbl.dataset.stats = JSON.stringify(stats);
+  lbl.textContent = days+' hari · ' + a.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) + ' – ' + b.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+  renderStats();
+});
+
+// quick add
+$('#qaGroup').innerHTML = groups.map(g => '<option value="'+g.id+'">'+g.label+'</option>').join('');
+function quickAdd(){
+  const v = $('#qaInput').value.trim();
+  if(!v) return;
+  tasks.unshift({
+    id: nextId++, title: v, desc:'', group: $('#qaGroup').value, priority: $('#qaPriority').value,
+    done:false, est:30, tracked:0, due:new Date(state.selectedDate), recurring:null, tags:[], subs:[],
+  });
+  $('#qaInput').value = '';
+  renderTasks();
+}
+$('#qaAdd').addEventListener('click', quickAdd);
+$('#qaInput').addEventListener('keydown', e => { if(e.key === 'Enter') quickAdd(); });
+
+// journal autosave
+const jr = $('#journal');
+jr.value = localStorage.getItem('harian-journal') || '';
+jr.addEventListener('input', () => localStorage.setItem('harian-journal', jr.value));
+
+// dark mode
+const dt = $('#darkToggle');
+function applyTheme(dark){
+  document.documentElement.classList.toggle('dark', dark);
+  $('#iconSun').classList.toggle('hidden', dark);
+  $('#iconMoon').classList.toggle('hidden', !dark);
+  localStorage.setItem('harian-theme', dark ? 'dark' : 'light');
+}
+dt.addEventListener('click', () => applyTheme(!document.documentElement.classList.contains('dark')));
+applyTheme(localStorage.getItem('harian-theme') === 'dark');
+
+/* ================= INIT ================= */
+function renderAll(){ renderHeader(); renderRail(); renderGroupPills(); renderTasks(); }
+renderAll();
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@
 		"check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build"
 	},
 	"dependencies": {
-		"@base-ui/react": "^1.8.0",
+		"@base-ui/react": "^1.9.0",
 		"@hookform/resolvers": "^5.9.1",
 		"@t3-oss/env-nextjs": "^0.13.11",
 		"@tanstack/react-query": "^5.104.1",
